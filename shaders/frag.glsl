@@ -1,4 +1,4 @@
-#version 330
+#version 140
 
 uniform struct {
     vec4 position;
