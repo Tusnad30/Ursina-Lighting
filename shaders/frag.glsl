@@ -11,24 +11,23 @@ uniform struct {
     mat4 shadowViewMatrix;
 } p3d_LightSource[1];
 
-out vec4 FragColor;
+out vec4 fragColor;
 
-in vec3 Normal;
-in vec3 FragPos;
-in vec3 ViewVector;
+in vec3 normal;
+in vec3 fragPos;
+in vec3 viewVector;
 in vec2 uv;
 in vec4 shad[1];
 
 uniform vec2 tiling;
-uniform vec3 lightDirection;
-uniform vec3 lightColor;
+uniform float lightsArrayLength;
+uniform vec4[1002] lightsArray;
 uniform vec3 viewPos;
 uniform float smoothness;
 uniform float ambientStrength;
 uniform sampler2D normalMap;
-uniform bool useNormalMap;
 uniform sampler2D specularMap;
-uniform bool useSpecularMap;
+
 uniform vec4 p3d_ColorScale;
 uniform sampler2D p3d_Texture0;
 
@@ -60,30 +59,66 @@ vec3 perturb_normal(vec3 N, vec3 V, vec2 texcoord)
 
 void main() {
     vec2 tuv = uv * tiling;
+    vec3 specular = vec3(0);
+    vec3 diffuse = vec3(0);
 
     // ambient
-    vec3 ambient = ambientStrength * lightColor;
+    float ambient = ambientStrength;
 
-    // diffuse
-    vec3 norm = normalize(Normal);
-    if (useNormalMap) norm = perturb_normal(norm, ViewVector, tuv);
 
-    //vec3 lightDir = normalize(lightDirection - FragPos);
-    vec3 lightDir = normalize(-lightDirection);
-    float diffuseStrength = max(dot(norm, lightDir), 0.0);
-    vec3 diffuse = diffuseStrength * lightColor;
+    for (int i = 0; i < lightsArrayLength / 2; i++) {
+        // vars
+        vec3 lightPosition = lightsArray[i * 2 + 1].xyz;
+        vec3 lightColor = lightsArray[i * 2].xyz;
+        float range = lightsArray[i * 2].w;
+        float intensity = lightsArray[i * 2 + 1].w;
 
-    // specular
-    vec3 specMap = vec3(0.5);
-    if (useSpecularMap) specMap = texture2D(specularMap, tuv).xyz;
+        // diffuse
+        vec3 norm = normalize(normal);
+        norm = perturb_normal(norm, viewVector, tuv);
 
-    vec3 viewDir = normalize(viewPos - FragPos);
-    vec3 reflectDir = reflect(-lightDir, norm);
-    float spec = pow(max(dot(viewDir, reflectDir), 0.0), smoothness);
-    vec3 specular = spec * lightColor * specMap;
+        vec3 lightDir = normalize(lightPosition - fragPos);
+        if (i == 0) lightDir = normalize(-lightPosition);
 
-    //shadows
-    float shadowValue = textureProj(p3d_LightSource[0].shadowMap, shad[0]);
+        float diffuseStrength = max(dot(norm, lightDir), 0.0);
+        vec3 ldiffuse = diffuseStrength * lightColor;
 
-    FragColor = vec4(ambient + (diffuse + specular) * shadowValue, 1.0) * texture2D(p3d_Texture0, tuv) * p3d_ColorScale;
+        // specular
+        vec3 specMap = vec3(0.5);
+        specMap = texture2D(specularMap, tuv).xyz;
+
+        vec3 viewDir = normalize(viewPos - fragPos);
+        vec3 reflectDir = reflect(-lightDir, norm);
+        float spec = pow(max(dot(viewDir, reflectDir), 0.0), smoothness);
+        vec3 lspecular = spec * lightColor * specMap;
+
+        //shadows
+        vec4 shadowCoord = shad[0];
+        shadowCoord.z += 0.001;
+        float shadowValue = textureProj(p3d_LightSource[0].shadowMap, shadowCoord);
+
+        // attenuation
+        float distance = length(lightPosition - fragPos);
+        float attenuation = (1. / distance - distance * pow(range, -2.)) * intensity;
+
+        if (!(i == 0)) {
+            ldiffuse *= attenuation;
+            lspecular *= attenuation;
+
+            ldiffuse = clamp(ldiffuse, ambient, 1000.);
+            lspecular = clamp(lspecular, ambient, 1000.);
+        }
+        // apply shadows
+        if (i == 0) {
+            ldiffuse *= intensity;
+            lspecular *= intensity;
+            ldiffuse *= shadowValue;
+            lspecular *= shadowValue;
+        }
+
+        diffuse += ldiffuse;
+        specular += lspecular;
+    }
+
+    fragColor = vec4(ambient + diffuse + specular, 1.0) * texture2D(p3d_Texture0, tuv) * p3d_ColorScale;
 }
