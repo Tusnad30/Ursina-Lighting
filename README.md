@@ -1,4 +1,4 @@
-# LitObject
+# Ursina Lighting
 Realistic lighting in ursina!
 
 If you want to have realistic lighting in ursina, import the **LitObject.py** in your project and use the **LitObject** class instead of the **Enity** class.
