@@ -50,6 +50,12 @@ class LitDirectionalLight():
     
     def setIntensity(self, intensity = 1):
         LitLightList[1].w = intensity
+    
+    def setColor(self, color = Vec3(1)):
+        LitLightList[0].xyz = color
+    
+    def setDirection(self, direction = Vec3(-1)):
+        LitLightList[1].xyz = direction
 
 
 class LitPointLight():
@@ -63,17 +69,23 @@ class LitPointLight():
     
     def setRange(self, range = 20):
         LitLightList[self.listIndex].w = range
+    
+    def setPosition(self, position = Vec3(0)):
+        LitLightList[self.listIndex + 1].xyz = position
+    
+    def setColor(self, color = Vec3(1)):
+        LitLightList[self.listIndex].xyz = color
 
 
 if __name__ == "__main__":
     app = Ursina()
 
     Texture.default_filtering = 'mipmap'
-    gtexture = Texture("textures/rocks_diff.jpg")
-    gspecTexture = Texture("textures/rocks_spec.jpg")
-    gnormTexture = Texture("textures/rocks_norm.exr")
+    texture = Texture("textures/rocks_diff.jpg")
+    specTexture = Texture("textures/rocks_spec.jpg")
+    normTexture = Texture("textures/rocks_norm.exr")
 
-    ground = LitObject(model = "plane", scale = 10, texture = gtexture, specularMap = gspecTexture, normalMap = gnormTexture)
+    ground = LitObject(model = "plane", scale = 10, texture = texture, specularMap = specTexture, normalMap = normTexture)
     cube = LitObject(model = "cube", position = (0, 0.5, 3), texture = "white_cube", specularMap = None, normalMap = None)
 
     sun = LitDirectionalLight(direction = Vec3(-1, -0.2, -0.5))
@@ -82,5 +94,14 @@ if __name__ == "__main__":
     pointLight2 = LitPointLight(position = Vec3(-3, 1, 0), color = Vec3(1, 0, 1))
 
     EditorCamera(rotation = (20, 0, 0))
+
+    iTime = 0
+
+    def update():
+        global iTime
+        iTime += time.dt
+
+        pointLight2.setPosition(Vec3(-3, 1, sin(iTime) * 2))
+
     
     app.run()
