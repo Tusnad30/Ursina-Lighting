@@ -58,6 +58,7 @@ vec3 perturb_normal(vec3 N, vec3 V, vec2 texcoord)
 
 
 void main() {
+    // vars
     vec2 tuv = uv * tiling;
     vec3 specular = vec3(0);
     vec3 diffuse = vec3(0);
@@ -65,18 +66,22 @@ void main() {
     // ambient
     float ambient = ambientStrength;
 
+    // maps
+    vec3 norm = normalize(normal);
+    norm = perturb_normal(norm, viewVector, tuv);
+
+    vec3 specMap = vec3(0.5);
+    specMap = texture2D(specularMap, tuv).xyz;
+
 
     for (int i = 0; i < lightsArrayLength / 2; i++) {
-        // vars
+        // current light data
         vec3 lightPosition = lightsArray[i * 2 + 1].xyz;
         vec3 lightColor = lightsArray[i * 2].xyz;
         float range = lightsArray[i * 2].w;
         float intensity = lightsArray[i * 2 + 1].w;
 
         // diffuse
-        vec3 norm = normalize(normal);
-        norm = perturb_normal(norm, viewVector, tuv);
-
         vec3 lightDir = normalize(lightPosition - fragPos);
         if (i == 0) lightDir = normalize(-lightPosition);
 
@@ -84,9 +89,6 @@ void main() {
         vec3 ldiffuse = diffuseStrength * lightColor;
 
         // specular
-        vec3 specMap = vec3(0.5);
-        specMap = texture2D(specularMap, tuv).xyz;
-
         vec3 viewDir = normalize(viewPos - fragPos);
         vec3 reflectDir = reflect(-lightDir, norm);
         float spec = pow(max(dot(viewDir, reflectDir), 0.0), smoothness);
