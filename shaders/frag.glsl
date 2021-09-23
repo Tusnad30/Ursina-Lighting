@@ -101,14 +101,14 @@ void main() {
 
         // attenuation
         float distance = length(lightPosition - fragPos);
-        float attenuation = (1. / distance - distance * pow(range, -2.)) * intensity;
+        float attenuation = (1. / distance - distance * pow(range, -2)) * intensity;
 
         if (!(i == 0)) {
             ldiffuse *= attenuation;
             lspecular *= attenuation;
 
-            ldiffuse = clamp(ldiffuse, ambient, 1000.);
-            lspecular = clamp(lspecular, ambient, 1000.);
+            ldiffuse = clamp(ldiffuse, ambient, 1000.0);
+            lspecular = clamp(lspecular, ambient, 1000.0);
         }
         // apply shadows
         if (i == 0) {
