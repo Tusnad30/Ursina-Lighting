@@ -43,8 +43,8 @@ class LitObject(Entity):
 
 class LitDirectionalLight():
     def __init__(self, direction = Vec3(0), color = Vec3(1), intensity = 1, shadows = True):
-        sun = DirectionalLight(shadows = shadows)
-        sun.look_at(direction)
+        self.sun = DirectionalLight(shadows = shadows)
+        self.sun.look_at(direction)
         LitLightList[0] = Vec4(color.x, color.y, color.z, 1)
         LitLightList[1] = Vec4(direction.x, direction.y, direction.z, intensity)
     
@@ -56,24 +56,35 @@ class LitDirectionalLight():
     
     def setDirection(self, direction = Vec3(-1)):
         LitLightList[1].xyz = direction
+        
+    def toggleShadows(self):
+        self.sun.shadows = not self.sun.shadows
 
 
 class LitPointLight():
     def __init__(self, position = Vec3(0), color = Vec3(1), range = 20, intensity = 1):
         self.listIndex = len(LitLightList)
+        self.position = position
+        self.color = color
+        self.range = range
+        self.intensity = intensity
         LitLightList.append(Vec4(color.x, color.y, color.z, range))
         LitLightList.append(Vec4(position.x, position.y, position.z, intensity))
     
     def setIntensity(self, intensity = 1):
+        self.intensity = intensity
         LitLightList[self.listIndex + 1].w = intensity
     
     def setRange(self, range = 20):
+        self.range = range
         LitLightList[self.listIndex].w = range
     
     def setPosition(self, position = Vec3(0)):
+        self.position = position
         LitLightList[self.listIndex + 1].xyz = position
     
     def setColor(self, color = Vec3(1)):
+        self.color = color
         LitLightList[self.listIndex].xyz = color
 
 
