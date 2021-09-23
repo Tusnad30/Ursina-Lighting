@@ -102,7 +102,7 @@ if __name__ == "__main__":
     sun = LitDirectionalLight(direction = Vec3(-1, -0.2, -0.5))
 
     pointLight = LitPointLight(position = Vec3(3, 1.5, 0), intensity = 2)
-    pointLight2 = LitPointLight(position = Vec3(-3, 1, 0), color = Vec3(1, 0, 1))
+    pointLight2 = LitPointLight(position = Vec3(-3, 1, 0), color = rgb(255, 0, 255))
 
     EditorCamera(rotation = (20, 0, 0))
 
