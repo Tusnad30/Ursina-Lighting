@@ -9,7 +9,10 @@ frag.close()
 LitLightList = [Vec4(1), Vec4(0)]
 
 class LitObject(Entity):
-    def __init__(self, model = 'plane', scale = 1, position = (0, 0, 0), rotation = (0, 0, 0), texture = 'white_cube', color = rgb(255, 255, 255), tiling = Vec2(1), lightDirection = Vec3(0), lightColor = Vec3(1), smoothness = 128, ambientStrength = 0.1, normalMap = None, specularMap = None, **kwargs):
+    def __init__(self, model = 'plane', scale = 1, position = (0, 0, 0), rotation = (0, 0, 0), texture = 'white_cube',
+                 color = rgb(255, 255, 255), tiling = Vec2(1), lightDirection = Vec3(0), lightColor = Vec3(1),
+                 smoothness = 128, ambientStrength = 0.1, normalMap = None, specularMap = None,
+                 on_update = lambda self: None, **kwargs):
         super().__init__(
             shader = LitShader,
             model = model,
@@ -22,23 +25,22 @@ class LitObject(Entity):
 
         for key, value in kwargs.items():
             setattr(self, key, value)
-
-        defaultNormal = Texture("textures/default_norm.png")
-        defaultSpecular = Texture("textures/default_spec.png")
         
-        if normalMap == None: normalMap = defaultNormal
-        if specularMap == None: specularMap = defaultSpecular
+        if normalMap == None: normalMap = Texture("textures/default_norm.png")
+        if specularMap == None: specularMap = Texture("textures/default_spec.png")
 
         self.set_shader_input("tiling", tiling)
         self.set_shader_input("smoothness", smoothness)
         self.set_shader_input("ambientStrength", ambientStrength)
         self.set_shader_input("normalMap", normalMap)
         self.set_shader_input("specularMap", specularMap)
+        self.on_update = on_update
     
     def update(self):
         self.set_shader_input("viewPos", camera.world_position)
         self.set_shader_input("lightsArray", LitLightList)
         self.set_shader_input("lightsArrayLength", len(LitLightList))
+        self.on_update(self)
 
 
 class LitDirectionalLight():
