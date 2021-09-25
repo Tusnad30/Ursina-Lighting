@@ -133,6 +133,7 @@ void main() {
         vec3 lightDirection = spotArray[i * 3 + 2].xyz;
         float lightCutOff = spotArray[i * 3 + 2].w;
 
+
         // check if lighting inside spotlight cone
         vec3 lightDir = normalize(lightPosition - fragPos);
         float theta = dot(lightDir, normalize(-lightDirection));
@@ -150,13 +151,13 @@ void main() {
 
             // attenuation
             float distance = length(lightPosition - fragPos);
-            float attenuation = (1.0 / (1.0 + distance * distance * (1.0 / range))) * intensity;
+            float attenuation = (1.0 / (1.0 + distance * distance * (1.0 / range))) * intensity * min(1,(theta - lightCutOff) * 100);
 
             ldiffuse *= attenuation;
             lspecular *= attenuation;
 
-            ldiffuse = clamp(ldiffuse, ambient, 1000.0);
-            lspecular = clamp(lspecular, ambient, 1000.0);
+            ldiffuse = clamp(ldiffuse, 0, 1000.0);
+            lspecular = clamp(lspecular, 0, 1000.0);
 
             diffuse += ldiffuse;
             specular += lspecular;
