@@ -20,8 +20,9 @@ in vec2 uv;
 in vec4 shad[1];
 
 uniform vec2 tiling;
-uniform float lightsArrayLength;
-uniform vec4[1002] lightsArray;
+uniform vec2 lightsArrayLength;
+uniform vec4[552] lightsArray;
+uniform vec4[450] spotArray;
 uniform vec3 viewPos;
 uniform float smoothness;
 uniform float ambientStrength;
@@ -73,8 +74,8 @@ void main() {
     vec3 specMap = vec3(0.5);
     specMap = texture2D(specularMap, tuv).xyz;
 
-
-    for (int i = 0; i < lightsArrayLength / 2; i++) {
+    // loop though each point light
+    for (int i = 0; i < lightsArrayLength.x / 2; i++) {
         // current light data
         vec3 lightPosition = lightsArray[i * 2 + 1].xyz;
         vec3 lightColor = lightsArray[i * 2].xyz;
@@ -120,6 +121,46 @@ void main() {
 
         diffuse += ldiffuse;
         specular += lspecular;
+    }
+
+    // loop through each spotlight
+    for (int i = 0; i < lightsArrayLength.y / 3; i++) {
+        // current light data
+        vec3 lightPosition = spotArray[i * 3 + 1].xyz;
+        vec3 lightColor = spotArray[i * 3].xyz;
+        float range = spotArray[i * 3].w;
+        float intensity = spotArray[i * 3 + 1].w;
+        vec3 lightDirection = spotArray[i * 3 + 2].xyz;
+        float lightCutOff = spotArray[i * 3 + 2].w;
+
+        // check if lighting inside spotlight cone
+        vec3 lightDir = normalize(lightPosition - fragPos);
+        float theta = dot(lightDir, normalize(-lightDirection));
+
+        if (theta > lightCutOff) {
+            // diffuse
+            float diffuseStrength = max(dot(norm, lightDir), 0.0);
+            vec3 ldiffuse = diffuseStrength * lightColor;
+
+            // specular
+            vec3 viewDir = normalize(viewPos - fragPos);
+            vec3 reflectDir = reflect(-lightDir, norm);
+            float spec = pow(max(dot(viewDir, reflectDir), 0.0), smoothness);
+            vec3 lspecular = spec * lightColor * specMap;
+
+            // attenuation
+            float distance = length(lightPosition - fragPos);
+            float attenuation = (1.0 / (1.0 + distance * distance * (1.0 / range))) * intensity;
+
+            ldiffuse *= attenuation;
+            lspecular *= attenuation;
+
+            ldiffuse = clamp(ldiffuse, ambient, 1000.0);
+            lspecular = clamp(lspecular, ambient, 1000.0);
+
+            diffuse += ldiffuse;
+            specular += lspecular;
+        }
     }
 
     fragColor = vec4(ambient + diffuse + specular, 1.0) * texture2D(p3d_Texture0, tuv) * p3d_ColorScale;
