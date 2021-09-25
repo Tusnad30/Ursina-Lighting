@@ -9,13 +9,14 @@ frag.close()
 LitLightList = [Vec4(1), Vec4(0)]
 
 class LitObject(Entity):
-    def __init__(self, model = 'plane', scale = 1, position = (0, 0, 0), rotation = (0, 0, 0), texture = 'white_cube',
+    def __init__(self, model = 'plane', scale = 1, position = (0, 0, 0), rotation = (0, 0, 0), texture = 'white_cube', collider = None,
                  color = rgb(255, 255, 255), tiling = Vec2(1), lightDirection = Vec3(0), lightColor = Vec3(1),
                  smoothness = 128, ambientStrength = 0.1, normalMap = None, specularMap = None,
                  onUpdate = lambda self: None, **kwargs):
         super().__init__(
             shader = LitShader,
             model = model,
+            collider = collider,
             position = position,
             rotation = rotation,
             scale = scale,
