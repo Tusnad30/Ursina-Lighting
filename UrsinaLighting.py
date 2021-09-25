@@ -1,12 +1,15 @@
 from ursina import *
+import numpy as np
 
 vert, frag = open("shaders/vert.glsl", "r"), open("shaders/frag.glsl", "r")
 LitShader = Shader(language = Shader.GLSL, vertex = vert.read(), fragment = frag.read())
 vert.close()
 frag.close()
 
-# list containing all lights, each light has 2 Vector4
+# list containing all light data
 LitLightList = [Vec4(1), Vec4(0)]
+LitSpotList = [Vec4(1), Vec4(0), Vec4(0)]
+
 
 class LitObject(Entity):
     def __init__(self, model = 'plane', scale = 1, position = (0, 0, 0), rotation = (0, 0, 0), texture = 'white_cube', collider = None,
@@ -40,7 +43,8 @@ class LitObject(Entity):
     def update(self):
         self.set_shader_input("viewPos", camera.world_position)
         self.set_shader_input("lightsArray", LitLightList)
-        self.set_shader_input("lightsArrayLength", len(LitLightList))
+        self.set_shader_input("lightsArrayLength", Vec2(len(LitLightList), len(LitSpotList)))
+        self.set_shader_input("spotArray", LitSpotList)
         self.onUpdate(self)
 
 
@@ -91,31 +95,73 @@ class LitPointLight():
         LitLightList[self.listIndex].xyz = color
 
 
+class LitSpotLight():
+    def __init__(self, position = Vec3(0), color = Vec3(1), range = 20, intensity = 1, direction = Vec3(0), angle = 30):
+        self.listIndex = len(LitSpotList)
+        self.position = position
+        self.color = color
+        self.range = range
+        self.intensity = intensity
+        self.direction = direction
+        self.angle = angle
+        LitSpotList.append(Vec4(color.x, color.y, color.z, range))
+        LitSpotList.append(Vec4(position.x, position.y, position.z, intensity))
+        LitSpotList.append(Vec4(direction.x, direction.y, direction.z, np.cos(np.radians(angle))))
+
+    def setIntensity(self, intensity = 1):
+        self.intensity = intensity
+        LitSpotList[self.listIndex + 1].w = intensity
+    
+    def setRange(self, range = 20):
+        self.range = range
+        LitSpotList[self.listIndex].w = range
+    
+    def setPosition(self, position = Vec3(0)):
+        self.position = position
+        LitSpotList[self.listIndex + 1].xyz = position
+    
+    def setColor(self, color = Vec3(1)):
+        self.color = color
+        LitSpotList[self.listIndex].xyz = color
+
+    def setDirection(self, direction = Vec3(0)):
+        self.direction = direction
+        LitSpotList[self.listIndex + 2].xyz = direction
+
+    def setAngle(self, angle = 30):
+        self.angle = angle
+        LitSpotList[self.listIndex + 2].w = np.cos(np.radians(angle))
+
+
+
 if __name__ == "__main__":
     app = Ursina()
 
+    # load textures
     Texture.default_filtering = 'mipmap'
     texture = Texture("textures/rocks_diff.jpg")
     specTexture = Texture("textures/rocks_spec.jpg")
     normTexture = Texture("textures/rocks_norm.exr")
 
+    # objects
     ground = LitObject(model = "plane", scale = 10, texture = texture, specularMap = specTexture, normalMap = normTexture)
     cube = LitObject(model = "cube", position = (0, 0.5, 3), texture = "white_cube", specularMap = None, normalMap = None)
 
+    # lights
     sun = LitDirectionalLight(direction = Vec3(-1, -0.2, -0.5))
+    pointLight = LitPointLight(position = Vec3(-3, 1, 0), color = rgb(255, 0, 255))
+    spotLight = LitSpotLight(position = Vec3(0, 3, 0), direction = Vec3(0.5, -1, -1))
 
-    pointLight = LitPointLight(position = Vec3(3, 1.5, 0), intensity = 2)
-    pointLight2 = LitPointLight(position = Vec3(-3, 1, 0), color = rgb(255, 0, 255))
-
-    EditorCamera(rotation = (20, 0, 0))
+    player = EditorCamera(rotation = (20, 0, 0))
 
     iTime = 0
 
+    # make lights move
     def update():
         global iTime
         iTime += time.dt
 
-        pointLight2.setPosition(Vec3(-3, 1, sin(iTime) * 2))
+        pointLight.setPosition(Vec3(-3, 1, sin(iTime) * 2))
+        spotLight.setDirection(Vec3(sin(iTime * 0.5), -1, -1))
 
-    
     app.run()
