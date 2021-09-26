@@ -107,9 +107,6 @@ void main() {
         if (!(i == 0)) {
             ldiffuse *= attenuation;
             lspecular *= attenuation;
-
-            ldiffuse = clamp(ldiffuse, 0.0, 1000.0);
-            lspecular = clamp(lspecular, 0.0, 1000.0);
         }
         // apply shadows
         if (i == 0) {
@@ -155,9 +152,6 @@ void main() {
 
             ldiffuse *= attenuation;
             lspecular *= attenuation;
-
-            ldiffuse = clamp(ldiffuse, 0.0, 1000.0);
-            lspecular = clamp(lspecular, 0.0, 1000.0);
 
             diffuse += ldiffuse;
             specular += lspecular;
