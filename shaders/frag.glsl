@@ -21,19 +21,23 @@ in vec4 shad[1];
 
 uniform vec2 tiling;
 uniform vec2 lightsArrayLength;
-uniform vec4[552] lightsArray;
+uniform vec4[550] lightsArray;
 uniform vec4[450] spotArray;
 uniform vec3 viewPos;
 uniform float smoothness;
 uniform float ambientStrength;
 uniform sampler2D normalMap;
 uniform sampler2D specularMap;
+uniform bool water;
+uniform float time;
+uniform samplerCube cubemap;
+uniform float cubemapIntensity;
 
 uniform vec4 p3d_ColorScale;
 uniform sampler2D p3d_Texture0;
 
 
-mat3 cotangent_frame(vec3 N, vec3 p, vec2 uv) {
+mat3 calTBN(vec3 N, vec3 p, vec2 uv) {
     vec3 dp1 = dFdx(p);
     vec3 dp2 = dFdy(p);
     vec2 duv1 = dFdx(uv);
@@ -48,13 +52,31 @@ mat3 cotangent_frame(vec3 N, vec3 p, vec2 uv) {
     return mat3(-T * invmax, B * invmax, N);
 }
 
-vec3 perturb_normal(vec3 N, vec3 V, vec2 texcoord)
+vec3 calNorm(vec3 N, vec3 V, vec2 texcoord)
 {
     vec3 map = texture2D(normalMap, texcoord).xyz;
     map = map * 2. - 1.;
     map.y = -map.y;
-    mat3 TBN = cotangent_frame( N, -V, texcoord );
+    mat3 TBN = calTBN( N, -V, texcoord );
     return normalize(TBN * map);
+}
+
+vec3 calWater(vec3 N, vec3 V, vec2 texcoord)
+{
+    vec3 h1 = texture2D(normalMap, texcoord + time * 0.02).rgb;
+    h1 = h1 * 2. - 1.;
+    h1.y = -h1.y;
+
+    vec3 h2 = texture2D(normalMap, texcoord * 0.75 + vec2(time * -0.01, 0)).rgb;
+    h2 = h2 * 2. - 1.;
+    h2.y = -h2.y;
+
+    vec3 h3 = texture2D(normalMap, texcoord * 0.5 + vec2(0, time * -0.015)).rgb;
+    h3 = h3 * 2. - 1.;
+    h3.y = -h3.y;
+
+    mat3 TBN = calTBN(N, -V, texcoord);
+    return normalize(TBN * (h1 + h2 + h3));
 }
 
 
@@ -69,7 +91,8 @@ void main() {
 
     // maps
     vec3 norm = normalize(normal);
-    norm = perturb_normal(norm, viewVector, tuv);
+    if (water == false) norm = calNorm(norm, viewVector, tuv);
+    if (water == true) norm = calWater(norm, viewVector, tuv);
 
     vec3 specMap = vec3(0.5);
     specMap = texture2D(specularMap, tuv).xyz;
@@ -148,7 +171,7 @@ void main() {
 
             // attenuation
             float distance = length(lightPosition - fragPos);
-            float attenuation = (1.0 / (1.0 + distance * distance * (1.0 / range))) * intensity * min(1,(theta - lightCutOff) * 100);
+            float attenuation = (1.0 / (1.0 + distance * distance * (1.0 / range))) * intensity * min(1.0, (theta - lightCutOff) * 100.0);
 
             ldiffuse *= attenuation;
             lspecular *= attenuation;
@@ -158,5 +181,12 @@ void main() {
         }
     }
 
-    fragColor = vec4(ambient + diffuse + specular, 1.0) * texture2D(p3d_Texture0, tuv) * p3d_ColorScale;
+    //cubemap
+    vec3 I = normalize(fragPos - viewPos);
+    vec3 R = reflect(I, norm);
+    vec3 cubemapR = texture(cubemap, R).rgb * (cubemapIntensity * specMap.x);
+
+    vec3 result = (ambient + diffuse) * (1.0 - cubemapIntensity * specMap.x) + cubemapR + specular;
+
+    fragColor = vec4(result, 1.0) * texture2D(p3d_Texture0, tuv) * p3d_ColorScale;
 }

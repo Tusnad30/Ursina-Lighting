@@ -10,11 +10,23 @@ frag.close()
 LitLightList = [Vec4(1), Vec4(0)]
 LitSpotList = [Vec4(1), Vec4(0), Vec4(0)]
 
+LitTime = 0
+
+class LitInit(Entity):
+    def __init__(self):
+        super().__init__(
+            model = None
+        )
+    
+    def update(self):
+        global LitTime
+        LitTime += time.dt
+
 
 class LitObject(Entity):
-    def __init__(self, model = 'plane', scale = 1, position = (0, 0, 0), rotation = (0, 0, 0), texture = 'white_cube', collider = None,
+    def __init__(self, model = 'plane', scale = 1, position = (0, 0, 0), rotation = (0, 0, 0), texture = None, collider = None,
                  color = rgb(255, 255, 255), tiling = Vec2(1), lightDirection = Vec3(0), lightColor = Vec3(1),
-                 smoothness = 128, ambientStrength = 0.1, normalMap = None, specularMap = None,
+                 smoothness = 128, ambientStrength = 0.1, normalMap = None, specularMap = None, water = False, cubemap = "textures/cubemap_#.jpg", cubemapIntensity = 0.5,
                  onUpdate = lambda self: None, **kwargs):
         super().__init__(
             shader = LitShader,
@@ -32,12 +44,20 @@ class LitObject(Entity):
         
         if normalMap == None: normalMap = Texture("textures/default_norm.png")
         if specularMap == None: specularMap = Texture("textures/default_spec.png")
+        if water:
+            normalMap = Texture("textures/water_norm.png")
+            smoothness = 512
+        
+        cubemaps = loader.loadCubeMap(cubemap)
 
         self.set_shader_input("tiling", tiling)
         self.set_shader_input("smoothness", smoothness)
         self.set_shader_input("ambientStrength", ambientStrength)
         self.set_shader_input("normalMap", normalMap)
         self.set_shader_input("specularMap", specularMap)
+        self.set_shader_input("water", water)
+        self.set_shader_input("cubemap", cubemaps)
+        self.set_shader_input("cubemapIntensity", cubemapIntensity)
         self.onUpdate = onUpdate
     
     def update(self):
@@ -45,6 +65,7 @@ class LitObject(Entity):
         self.set_shader_input("lightsArray", LitLightList)
         self.set_shader_input("lightsArrayLength", Vec2(len(LitLightList), len(LitSpotList)))
         self.set_shader_input("spotArray", LitSpotList)
+        self.set_shader_input("time", LitTime)
         self.onUpdate(self)
 
 
@@ -136,26 +157,36 @@ class LitSpotLight():
 
 if __name__ == "__main__":
     app = Ursina()
+    
+    # IMPORTANT !!!
+    lit = LitInit()
+    # IMPORTANT !!!
 
     # load textures
     Texture.default_filtering = 'mipmap'
     texture = Texture("textures/rocks_diff.jpg")
     specTexture = Texture("textures/rocks_spec.jpg")
     normTexture = Texture("textures/rocks_norm.exr")
+    skyboxTexture = Texture("textures/skybox.jpg")
+
+    #skybox
+    skybox = Sky(model = "sphere", double_sided = True, texture = skyboxTexture, rotation = (0, 90, 0))
 
     # objects
-    ground = LitObject(model = "plane", scale = 10, texture = texture, specularMap = specTexture, normalMap = normTexture)
-    cube = LitObject(model = "cube", position = (0, 0.5, 3), texture = "white_cube", specularMap = None, normalMap = None)
+    ground = LitObject(model = "plane", scale = 10, texture = texture, specularMap = specTexture, normalMap = normTexture, ambientStrength = 0.5)
+    cube = LitObject(model = "cube", position = (0, 0.5, 3), texture = "white_cube", specularMap = None, normalMap = None, ambientStrength = 0.5)
+    water = LitObject(position = (0, -0.1, 1), scale = 50, water = True, cubemapIntensity = 0.75, ambientStrength = 0.5)
 
     # lights
-    sun = LitDirectionalLight(direction = Vec3(-1, -0.2, -0.5))
+    sun = LitDirectionalLight(direction = Vec3(0.5, -0.4, 1))
     pointLight = LitPointLight(position = Vec3(-3, 1, 0), color = rgb(255, 0, 255))
     spotLight = LitSpotLight(position = Vec3(0, 3, 0), direction = Vec3(0.5, -1, -1))
 
+    # player
     player = EditorCamera(rotation = (20, 0, 0))
+    camera.fov = 80
 
     iTime = 0
-
     # make lights move
     def update():
         global iTime
