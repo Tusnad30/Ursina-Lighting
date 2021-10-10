@@ -23,7 +23,6 @@ uniform vec2 tiling;
 uniform vec2 lightsArrayLength;
 uniform vec4[550] lightsArray;
 uniform vec4[450] spotArray;
-uniform vec3 viewPos;
 uniform float smoothness;
 uniform float ambientStrength;
 uniform sampler2D normalMap;
@@ -35,6 +34,7 @@ uniform float cubemapIntensity;
 
 uniform vec4 p3d_ColorScale;
 uniform sampler2D p3d_Texture0;
+uniform mat4 p3d_ViewMatrixInverse;
 
 
 mat3 calTBN(vec3 N, vec3 p, vec2 uv) {
@@ -85,6 +85,7 @@ void main() {
     vec2 tuv = uv * tiling;
     vec3 specular = vec3(0);
     vec3 diffuse = vec3(0);
+    vec3 viewPos = p3d_ViewMatrixInverse[3].xyz;
 
     // ambient
     float ambient = ambientStrength;

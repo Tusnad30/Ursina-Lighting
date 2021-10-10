@@ -61,7 +61,6 @@ class LitObject(Entity):
         self.onUpdate = onUpdate
     
     def update(self):
-        self.set_shader_input("viewPos", camera.world_position)
         self.set_shader_input("lightsArray", LitLightList)
         self.set_shader_input("lightsArrayLength", Vec2(len(LitLightList), len(LitSpotList)))
         self.set_shader_input("spotArray", LitSpotList)

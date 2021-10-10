@@ -21,18 +21,17 @@ out vec3 viewVector;
 out vec2 uv;
 out vec4 shad[1];
 
-uniform vec3 viewPos;
-
 uniform mat4 p3d_ModelMatrix;
 uniform mat4 p3d_ViewMatrix;
 uniform mat4 p3d_ProjectionMatrix;
 uniform mat4 p3d_ModelViewMatrix;
+uniform mat4 p3d_ViewMatrixInverse;
 
 void main() {
     fragPos = vec3(p3d_ModelMatrix * vec4(p3d_Vertex.xyz, 1.0));
     normal = inverse(transpose(mat3(p3d_ModelMatrix))) * p3d_Normal;
     uv = p3d_MultiTexCoord0;
-    viewVector = viewPos - p3d_Vertex.xyz;
+    viewVector = p3d_ViewMatrixInverse[3].xyz - p3d_Vertex.xyz;
     
     shad[0] = p3d_LightSource[0].shadowViewMatrix * vec4(vec3(p3d_ModelViewMatrix * p3d_Vertex), 1);
 
