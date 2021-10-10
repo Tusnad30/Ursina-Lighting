@@ -21,7 +21,7 @@ in vec4 shad[1];
 
 uniform vec2 tiling;
 uniform vec2 lightsArrayLength;
-uniform vec4[550] lightsArray;
+uniform vec4[502] lightsArray;
 uniform vec4[450] spotArray;
 uniform float smoothness;
 uniform float ambientStrength;
