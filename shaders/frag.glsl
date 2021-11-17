@@ -120,9 +120,7 @@ void main() {
         vec3 lspecular = spec * lightColor * specMap;
 
         //shadows
-        vec4 shadowCoord = shad[0];
-        shadowCoord.z += 0.001;
-        float shadowValue = textureProj(p3d_LightSource[0].shadowMap, shadowCoord);
+        float shadowValue = textureProj(p3d_LightSource[0].shadowMap, shad[0]);
 
         // attenuation
         float distance = length(lightPosition - fragPos);
