@@ -1,5 +1,9 @@
 #version 140
 
+// advanced shadow options
+const bool smoothShadows = true;
+const float blurStrength = 0.12;
+
 uniform struct {
     vec4 position;
     vec3 color;
@@ -79,6 +83,24 @@ vec3 calWater(vec3 N, vec3 V, vec2 texcoord)
     return normalize(TBN * (h1 + h2 + h3));
 }
 
+float textureProjSoft(sampler2DShadow tex, vec4 uv, float bias, float blur)
+{
+    float result = textureProj(tex, uv, bias);
+    result += textureProj(tex, vec4(uv.xy + vec2( -0.326212, -0.405805)*blur, uv.z-bias, uv.w));
+    result += textureProj(tex, vec4(uv.xy + vec2(-0.840144, -0.073580)*blur, uv.z-bias, uv.w));
+    result += textureProj(tex, vec4(uv.xy + vec2(-0.695914, 0.457137)*blur, uv.z-bias, uv.w));
+    result += textureProj(tex, vec4(uv.xy + vec2(-0.203345, 0.620716)*blur, uv.z-bias, uv.w));
+    result += textureProj(tex, vec4(uv.xy + vec2(0.962340, -0.194983)*blur, uv.z-bias, uv.w));
+    result += textureProj(tex, vec4(uv.xy + vec2(0.473434, -0.480026)*blur, uv.z-bias, uv.w));
+    result += textureProj(tex, vec4(uv.xy + vec2(0.519456, 0.767022)*blur, uv.z-bias, uv.w));
+    result += textureProj(tex, vec4(uv.xy + vec2(0.185461, -0.893124)*blur, uv.z-bias, uv.w));
+    result += textureProj(tex, vec4(uv.xy + vec2(0.507431, 0.064425)*blur, uv.z-bias, uv.w));
+    result += textureProj(tex, vec4(uv.xy + vec2(0.896420, 0.412458)*blur, uv.z-bias, uv.w));
+    result += textureProj(tex, vec4(uv.xy + vec2(-0.321940, -0.932615)*blur, uv.z-bias, uv.w));
+    result += textureProj(tex, vec4(uv.xy + vec2(-0.791559, -0.597705)*blur, uv.z-bias, uv.w));
+    return result / 13.0;
+}    
+
 
 void main() {
     // vars
@@ -120,7 +142,11 @@ void main() {
         vec3 lspecular = spec * lightColor * specMap;
 
         //shadows
-        float shadowValue = textureProj(p3d_LightSource[0].shadowMap, shad[0]);
+        float shadowValue = 0.0;
+        if (smoothShadows)
+            shadowValue = textureProjSoft(p3d_LightSource[0].shadowMap, shad[0], 0.0, blurStrength * 0.01);
+        if (smoothShadows == false)
+            shadowValue = textureProj(p3d_LightSource[0].shadowMap, shad[0]);
 
         // attenuation
         float distance = length(lightPosition - fragPos);
