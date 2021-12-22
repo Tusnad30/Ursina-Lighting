@@ -173,11 +173,11 @@ if __name__ == "__main__":
 
     # objects
     ground = LitObject(model = "plane", scale = 10, texture = texture, specularMap = specTexture, normalMap = normTexture, ambientStrength = 0.5)
-    cube = LitObject(model = "cube", position = (0, 0.5, 3), texture = "white_cube", specularMap = None, normalMap = None, ambientStrength = 0.5)
+    cube = LitObject(model = "cube", position = (0, 0.5, 1), texture = "white_cube", specularMap = None, normalMap = None, ambientStrength = 0.5)
     water = LitObject(position = (0, -0.1, 1), scale = 50, water = True, cubemapIntensity = 0.75, ambientStrength = 0.5)
 
     # lights
-    sun = LitDirectionalLight(direction = Vec3(0.5, -0.4, 1))
+    sun = LitDirectionalLight(direction = Vec3(0.5, -0.6, 1))
     pointLight = LitPointLight(position = Vec3(-3, 1, 0), color = rgb(255, 0, 255))
     spotLight = LitSpotLight(position = Vec3(0, 3, 0), direction = Vec3(0.5, -1, -1))
 
