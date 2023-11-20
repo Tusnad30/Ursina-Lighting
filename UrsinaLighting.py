@@ -37,6 +37,7 @@ class LitObject(Entity):
             scale = scale,
             texture = texture,
             color = color,
+            enabled = False,
         )
 
         for key, value in kwargs.items():
@@ -59,6 +60,8 @@ class LitObject(Entity):
         self.set_shader_input("cubemap", cubemaps)
         self.set_shader_input("cubemapIntensity", cubemapIntensity)
         self.onUpdate = onUpdate
+
+        self.enabled = True
     
     def update(self):
         self.set_shader_input("lightsArray", LitLightList)
